@@ -1,0 +1,682 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "virtualNetworks_spoke_one_name": {
+      "defaultValue": "spoke-one",
+      "type": "String"
+    },
+    "virtualNetworks_spoke_one_address_space": {
+      "defaultValue": "10.200.0.0/16",
+      "type": "String"
+    },
+    "virtualNetworks_spoke_one_frontend_subnet": {
+      "defaultValue": "10.200.0.0/22",
+      "type": "String"
+    },
+    "virtualNetworks_spoke_one_backend_subnet": {
+      "defaultValue": "10.200.4.0/22",
+      "type": "String"
+    },
+    "virtualNetworks_spoke_one_endpoint_subnet": {
+      "defaultValue": "10.200.8.0/24",
+      "type": "String"
+    },
+    "virtualNetworks_spoke_one_interface_subnet": {
+      "defaultValue": "10.200.9.0/24",
+      "type": "String"
+    },
+    "virtualNetworks_spoke_two_name": {
+      "defaultValue": "spoke-two",
+      "type": "String"
+    },
+    "virtualNetworks_spoke_two_address_space": {
+      "defaultValue": "10.250.0.0/16",
+      "type": "String"
+    },
+    "virtualNetworks_spoke_two_frontend_subnet": {
+      "defaultValue": "10.250.0.0/22",
+      "type": "String"
+    },
+    "virtualNetworks_spoke_two_backend_subnet": {
+      "defaultValue": "10.250.4.0/22",
+      "type": "String"
+    },
+    "virtualNetworks_spoke_two_endpoint_subnet": {
+      "defaultValue": "10.250.8.0/24",
+      "type": "String"
+    },
+    "virtualNetworks_spoke_two_interface_subnet": {
+      "defaultValue": "10.250.9.0/24",
+      "type": "String"
+    },
+    "virtualNetworks_hub_network_name": {
+      "defaultValue": "hub-network",
+      "type": "String"
+    },
+    "virtualNetworks_hub_network_address_space": {
+      "defaultValue": "10.100.0.0/16",
+      "type": "String"
+    },
+    "virtualNetworks_hub_network_frontend_subnet": {
+      "defaultValue": "10.100.0.0/22",
+      "type": "String"
+    },
+    "virtualNetworks_hub_network_backend_subnet": {
+      "defaultValue": "10.100.4.0/22",
+      "type": "String"
+    },
+    "virtualNetworks_hub_network_endpoint_subnet": {
+      "defaultValue": "10.100.8.0/24",
+      "type": "String"
+    },
+    "virtualNetworks_hub_network_interface_subnet": {
+      "defaultValue": "10.100.9.0/24",
+      "type": "String"
+    },
+    "networkSecurityGroups_default_nsg_name": {
+      "defaultValue": "default-nsg",
+      "type": "String"
+    }
+  },
+  "variables": {},
+  "resources": [
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2020-11-01",
+      "name": "[parameters('networkSecurityGroups_default_nsg_name')]",
+      "location": "eastus",
+      "properties": {
+        "securityRules": []
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2020-11-01",
+      "name": "[parameters('virtualNetworks_spoke_one_name')]",
+      "location": "eastus",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_hub_network_name'))]"
+      ],
+      "tags": {
+        "Purpose": "vNET"
+      },
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[parameters('virtualNetworks_spoke_one_address_space')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "frontend",
+            "properties": {
+              "addressPrefix": "[parameters('virtualNetworks_spoke_one_frontend_subnet')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]"
+              },
+              "serviceEndpoints": [],
+              "delegations": [],
+              "privateEndpointNetworkPolicies": "Enabled",
+              "privateLinkServiceNetworkPolicies": "Enabled"
+            }
+          },
+          {
+            "name": "backend",
+            "properties": {
+              "addressPrefix": "[parameters('virtualNetworks_spoke_one_backend_subnet')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]"
+              },
+              "serviceEndpoints": [],
+              "delegations": [],
+              "privateEndpointNetworkPolicies": "Enabled",
+              "privateLinkServiceNetworkPolicies": "Enabled"
+            }
+          },
+          {
+            "name": "endpoint",
+            "properties": {
+              "addressPrefix": "[parameters('virtualNetworks_spoke_one_endpoint_subnet')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]"
+              },
+              "serviceEndpoints": [],
+              "delegations": [],
+              "privateEndpointNetworkPolicies": "Enabled",
+              "privateLinkServiceNetworkPolicies": "Enabled"
+            }
+          },
+          {
+            "name": "interface",
+            "properties": {
+              "addressPrefix": "[parameters('virtualNetworks_spoke_one_interface_subnet')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]"
+              },
+              "serviceEndpoints": [],
+              "delegations": [],
+              "privateEndpointNetworkPolicies": "Enabled",
+              "privateLinkServiceNetworkPolicies": "Enabled"
+            }
+          }
+        ],
+        "virtualNetworkPeerings": [
+          {
+            "name": "[concat(parameters('virtualNetworks_spoke_one_name'), '-to-hub-peering')]",
+            "properties": {
+              "peeringState": "Connected",
+              "remoteVirtualNetwork": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_hub_network_name'))]"
+              },
+              "allowVirtualNetworkAccess": true,
+              "allowForwardedTraffic": true,
+              "allowGatewayTransit": false,
+              "useRemoteGateways": false,
+              "remoteAddressSpace": {
+                "addressPrefixes": [
+                  "[parameters('virtualNetworks_hub_network_address_space')]"
+                ]
+              }
+            }
+          }
+        ],
+        "enableDdosProtection": false
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2020-11-01",
+      "name": "[parameters('virtualNetworks_spoke_two_name')]",
+      "location": "eastus",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_hub_network_name'))]"
+      ],
+      "tags": {
+        "Purpose": "vNET"
+      },
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[parameters('virtualNetworks_spoke_two_address_space')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "frontend",
+            "properties": {
+              "addressPrefix": "[parameters('virtualNetworks_spoke_two_frontend_subnet')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]"
+              },
+              "serviceEndpoints": [],
+              "delegations": [],
+              "privateEndpointNetworkPolicies": "Enabled",
+              "privateLinkServiceNetworkPolicies": "Enabled"
+            }
+          },
+          {
+            "name": "backend",
+            "properties": {
+              "addressPrefix": "[parameters('virtualNetworks_spoke_two_backend_subnet')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]"
+              },
+              "serviceEndpoints": [],
+              "delegations": [],
+              "privateEndpointNetworkPolicies": "Enabled",
+              "privateLinkServiceNetworkPolicies": "Enabled"
+            }
+          },
+          {
+            "name": "endpoint",
+            "properties": {
+              "addressPrefix": "[parameters('virtualNetworks_spoke_two_endpoint_subnet')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]"
+              },
+              "serviceEndpoints": [],
+              "delegations": [],
+              "privateEndpointNetworkPolicies": "Enabled",
+              "privateLinkServiceNetworkPolicies": "Enabled"
+            }
+          },
+          {
+            "name": "interface",
+            "properties": {
+              "addressPrefix": "[parameters('virtualNetworks_spoke_two_interface_subnet')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]"
+              },
+              "serviceEndpoints": [],
+              "delegations": [],
+              "privateEndpointNetworkPolicies": "Enabled",
+              "privateLinkServiceNetworkPolicies": "Enabled"
+            }
+          }
+        ],
+        "virtualNetworkPeerings": [
+          {
+            "name": "[concat(parameters('virtualNetworks_spoke_two_name'), '-to-hub-peering')]",
+            "properties": {
+              "peeringState": "Connected",
+              "remoteVirtualNetwork": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_hub_network_name'))]"
+              },
+              "allowVirtualNetworkAccess": true,
+              "allowForwardedTraffic": true,
+              "allowGatewayTransit": false,
+              "useRemoteGateways": false,
+              "remoteAddressSpace": {
+                "addressPrefixes": [
+                  "[parameters('virtualNetworks_hub_network_address_space')]"
+                ]
+              }
+            }
+          }
+        ],
+        "enableDdosProtection": false
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/subnets",
+      "apiVersion": "2020-11-01",
+      "name": "[concat(parameters('virtualNetworks_hub_network_name'), '/backend')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_hub_network_name'))]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]"
+      ],
+      "properties": {
+        "addressPrefix": "[parameters('virtualNetworks_hub_network_backend_subnet')]",
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]"
+        },
+        "serviceEndpoints": [],
+        "delegations": [],
+        "privateEndpointNetworkPolicies": "Enabled",
+        "privateLinkServiceNetworkPolicies": "Enabled"
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/subnets",
+      "apiVersion": "2020-11-01",
+      "name": "[concat(parameters('virtualNetworks_spoke_one_name'), '/backend')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_spoke_one_name'))]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]"
+      ],
+      "properties": {
+        "addressPrefix": "[parameters('virtualNetworks_spoke_one_backend_subnet')]",
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]"
+        },
+        "serviceEndpoints": [],
+        "delegations": [],
+        "privateEndpointNetworkPolicies": "Enabled",
+        "privateLinkServiceNetworkPolicies": "Enabled"
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/subnets",
+      "apiVersion": "2020-11-01",
+      "name": "[concat(parameters('virtualNetworks_spoke_two_name'), '/backend')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_spoke_two_name'))]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]"
+      ],
+      "properties": {
+        "addressPrefix": "[parameters('virtualNetworks_spoke_two_backend_subnet')]",
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]"
+        },
+        "serviceEndpoints": [],
+        "delegations": [],
+        "privateEndpointNetworkPolicies": "Enabled",
+        "privateLinkServiceNetworkPolicies": "Enabled"
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/subnets",
+      "apiVersion": "2020-11-01",
+      "name": "[concat(parameters('virtualNetworks_hub_network_name'), '/endpoint')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_hub_network_name'))]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]"
+      ],
+      "properties": {
+        "addressPrefix": "[parameters('virtualNetworks_hub_network_endpoint_subnet')]",
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]"
+        },
+        "serviceEndpoints": [],
+        "delegations": [],
+        "privateEndpointNetworkPolicies": "Enabled",
+        "privateLinkServiceNetworkPolicies": "Enabled"
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/subnets",
+      "apiVersion": "2020-11-01",
+      "name": "[concat(parameters('virtualNetworks_spoke_one_name'), '/endpoint')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_spoke_one_name'))]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]"
+      ],
+      "properties": {
+        "addressPrefix": "[parameters('virtualNetworks_spoke_one_endpoint_subnet')]",
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]"
+        },
+        "serviceEndpoints": [],
+        "delegations": [],
+        "privateEndpointNetworkPolicies": "Enabled",
+        "privateLinkServiceNetworkPolicies": "Enabled"
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/subnets",
+      "apiVersion": "2020-11-01",
+      "name": "[concat(parameters('virtualNetworks_spoke_two_name'), '/endpoint')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_spoke_two_name'))]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]"
+      ],
+      "properties": {
+        "addressPrefix": "[parameters('virtualNetworks_spoke_two_endpoint_subnet')]",
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]"
+        },
+        "serviceEndpoints": [],
+        "delegations": [],
+        "privateEndpointNetworkPolicies": "Enabled",
+        "privateLinkServiceNetworkPolicies": "Enabled"
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/subnets",
+      "apiVersion": "2020-11-01",
+      "name": "[concat(parameters('virtualNetworks_hub_network_name'), '/frontend')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_hub_network_name'))]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]"
+      ],
+      "properties": {
+        "addressPrefix": "[parameters('virtualNetworks_hub_network_frontend_subnet')]",
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]"
+        },
+        "serviceEndpoints": [],
+        "delegations": [],
+        "privateEndpointNetworkPolicies": "Enabled",
+        "privateLinkServiceNetworkPolicies": "Enabled"
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/subnets",
+      "apiVersion": "2020-11-01",
+      "name": "[concat(parameters('virtualNetworks_spoke_one_name'), '/frontend')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_spoke_one_name'))]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]"
+      ],
+      "properties": {
+        "addressPrefix": "[parameters('virtualNetworks_spoke_one_frontend_subnet')]",
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]"
+        },
+        "serviceEndpoints": [],
+        "delegations": [],
+        "privateEndpointNetworkPolicies": "Enabled",
+        "privateLinkServiceNetworkPolicies": "Enabled"
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/subnets",
+      "apiVersion": "2020-11-01",
+      "name": "[concat(parameters('virtualNetworks_spoke_two_name'), '/frontend')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_spoke_two_name'))]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]"
+      ],
+      "properties": {
+        "addressPrefix": "[parameters('virtualNetworks_spoke_two_frontend_subnet')]",
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]"
+        },
+        "serviceEndpoints": [],
+        "delegations": [],
+        "privateEndpointNetworkPolicies": "Enabled",
+        "privateLinkServiceNetworkPolicies": "Enabled"
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/subnets",
+      "apiVersion": "2020-11-01",
+      "name": "[concat(parameters('virtualNetworks_hub_network_name'), '/interface')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_hub_network_name'))]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]"
+      ],
+      "properties": {
+        "addressPrefix": "[parameters('virtualNetworks_hub_network_interface_subnet')]",
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]"
+        },
+        "serviceEndpoints": [],
+        "delegations": [],
+        "privateEndpointNetworkPolicies": "Enabled",
+        "privateLinkServiceNetworkPolicies": "Enabled"
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/subnets",
+      "apiVersion": "2020-11-01",
+      "name": "[concat(parameters('virtualNetworks_spoke_one_name'), '/interface')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_spoke_one_name'))]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]"
+      ],
+      "properties": {
+        "addressPrefix": "[parameters('virtualNetworks_spoke_one_interface_subnet')]",
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]"
+        },
+        "serviceEndpoints": [],
+        "delegations": [],
+        "privateEndpointNetworkPolicies": "Enabled",
+        "privateLinkServiceNetworkPolicies": "Enabled"
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/subnets",
+      "apiVersion": "2020-11-01",
+      "name": "[concat(parameters('virtualNetworks_spoke_two_name'), '/interface')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_spoke_two_name'))]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]"
+      ],
+      "properties": {
+        "addressPrefix": "[parameters('virtualNetworks_spoke_two_interface_subnet')]",
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]"
+        },
+        "serviceEndpoints": [],
+        "delegations": [],
+        "privateEndpointNetworkPolicies": "Enabled",
+        "privateLinkServiceNetworkPolicies": "Enabled"
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+      "apiVersion": "2020-11-01",
+      "name": "[concat(parameters('virtualNetworks_hub_network_name'), '/hub-to-spoke-one-peering')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_hub_network_name'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_spoke_one_name'))]"
+      ],
+      "properties": {
+        "peeringState": "Connected",
+        "remoteVirtualNetwork": {
+          "id": "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_spoke_one_name'))]"
+        },
+        "allowVirtualNetworkAccess": true,
+        "allowForwardedTraffic": true,
+        "allowGatewayTransit": false,
+        "useRemoteGateways": false,
+        "remoteAddressSpace": {
+          "addressPrefixes": [
+            "[parameters('virtualNetworks_spoke_one_address_space')]"
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+      "apiVersion": "2020-11-01",
+      "name": "[concat(parameters('virtualNetworks_hub_network_name'), '/hub-to-spoke-two-peering')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_hub_network_name'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_spoke_two_name'))]"
+      ],
+      "properties": {
+        "peeringState": "Connected",
+        "remoteVirtualNetwork": {
+          "id": "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_spoke_two_name'))]"
+        },
+        "allowVirtualNetworkAccess": true,
+        "allowForwardedTraffic": true,
+        "allowGatewayTransit": false,
+        "useRemoteGateways": false,
+        "remoteAddressSpace": {
+          "addressPrefixes": [
+            "[parameters('virtualNetworks_spoke_two_address_space')]"
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+      "apiVersion": "2020-11-01",
+      "name": "[concat(parameters('virtualNetworks_spoke_one_name'), '/', parameters('virtualNetworks_spoke_one_name'), '-to-hub-peering')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_spoke_one_name'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_hub_network_name'))]"
+      ],
+      "properties": {
+        "peeringState": "Connected",
+        "remoteVirtualNetwork": {
+          "id": "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_hub_network_name'))]"
+        },
+        "allowVirtualNetworkAccess": true,
+        "allowForwardedTraffic": true,
+        "allowGatewayTransit": false,
+        "useRemoteGateways": false,
+        "remoteAddressSpace": {
+          "addressPrefixes": [
+            "[parameters('virtualNetworks_hub_network_address_space')]"
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+      "apiVersion": "2020-11-01",
+      "name": "[concat(parameters('virtualNetworks_spoke_two_name'), '/', parameters('virtualNetworks_spoke_two_name'), '-to-hub-peering')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_spoke_two_name'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_hub_network_name'))]"
+      ],
+      "properties": {
+        "peeringState": "Connected",
+        "remoteVirtualNetwork": {
+          "id": "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_hub_network_name'))]"
+        },
+        "allowVirtualNetworkAccess": true,
+        "allowForwardedTraffic": true,
+        "allowGatewayTransit": false,
+        "useRemoteGateways": false,
+        "remoteAddressSpace": {
+          "addressPrefixes": [
+            "[parameters('virtualNetworks_hub_network_address_space')]"
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2020-11-01",
+      "name": "[parameters('virtualNetworks_hub_network_name')]",
+      "location": "eastus",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]"
+      ],
+      "tags": {
+        "Purpose": "vNET"
+      },
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[parameters('virtualNetworks_hub_network_address_space')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "frontend",
+            "properties": {
+              "addressPrefix": "[parameters('virtualNetworks_hub_network_frontend_subnet')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]"
+              },
+              "serviceEndpoints": [],
+              "delegations": [],
+              "privateEndpointNetworkPolicies": "Enabled",
+              "privateLinkServiceNetworkPolicies": "Enabled"
+            }
+          },
+          {
+            "name": "backend",
+            "properties": {
+              "addressPrefix": "[parameters('virtualNetworks_hub_network_backend_subnet')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]"
+              },
+              "serviceEndpoints": [],
+              "delegations": [],
+              "privateEndpointNetworkPolicies": "Enabled",
+              "privateLinkServiceNetworkPolicies": "Enabled"
+            }
+          },
+          {
+            "name": "endpoint",
+            "properties": {
+              "addressPrefix": "[parameters('virtualNetworks_hub_network_endpoint_subnet')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]"
+              },
+              "serviceEndpoints": [],
+              "delegations": [],
+              "privateEndpointNetworkPolicies": "Enabled",
+              "privateLinkServiceNetworkPolicies": "Enabled"
+            }
+          },
+          {
+            "name": "interface",
+            "properties": {
+              "addressPrefix": "[parameters('virtualNetworks_hub_network_interface_subnet')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_default_nsg_name'))]"
+              },
+              "serviceEndpoints": [],
+              "delegations": [],
+              "privateEndpointNetworkPolicies": "Enabled",
+              "privateLinkServiceNetworkPolicies": "Enabled"
+            }
+          }
+        ],
+        "enableDdosProtection": false
+      }
+    }
+  ]
+}
